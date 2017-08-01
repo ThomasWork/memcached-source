@@ -45,7 +45,7 @@ static item *tails[LARGEST_ID];
 static itemstats_t itemstats[LARGEST_ID];
 static unsigned int sizes[LARGEST_ID];//LRU ¶ÓÁĞÖĞÓĞ¶àÉÙÔªËØ
 static uint64_t sizes_bytes[LARGEST_ID];// LRU ¶ÓÁĞ×Ü¹²ÓĞ¶àÉÙÄÚ´æ
-static unsigned int *stats_sizes_hist = NULL;//±£´æµÄÊÇÕ¼ÓĞ²»Í¬(32*n)×Ö½ÚµÄitemµÄÊıÁ¿?
+static unsigned int *stats_sizes_hist = NULL;//±£´æµÄÊÇÕ¼ÓĞ²»Í¬(32*n)×Ö½ÚµÄitemµÄÊıÁ¿å
 static uint64_t stats_sizes_cas_min = 0;
 static int stats_sizes_buckets = 0;
 
@@ -146,7 +146,7 @@ item *do_item_alloc(char *key, const size_t nkey, const unsigned int flags,
                     const rel_time_t exptime, const int nbytes) {
     int i;
     uint8_t nsuffix;
-    item *it = NULL;//suffixÖĞ´æ´¢µÄÊÇflagsºÍnbytes-2£¬Êµ¼ÊÊÇÊ²Ã´ÄÚÈİÄØ?
+    item *it = NULL;//suffixÖĞ´æ´¢µÄÊÇflagsºÍnbytes-2£¬Êµ¼ÊÊÇÊ²Ã´ÄÚÈİÄØå
     char suffix[40];//ÕâÀïµÄºó×º¿Õ¼äÏÈ¿ª´óÒ»µã£¬ÔÚÏÂÒ»²½»áÊÕËõ¡£
     size_t ntotal = item_make_header(nkey + 1, flags, nbytes, suffix, &nsuffix);//¼ÆËãitemµÄ×Ü¿Õ¼ä´óĞ¡
     if (settings.use_cas) {//Èç¹ûÊ¹ÓÃcasÔò½«ÏàÓ¦µÄ¿Õ¼äÔö¼Ó
@@ -223,7 +223,7 @@ item *do_item_alloc(char *key, const size_t nkey, const unsigned int flags,
     /* Items are initially loaded into the HOT_LRU. This is '0' but I want at
      * least a note here. Compiler (hopefully?) optimizes this out.
      */
-    if (settings.lru_maintainer_thread) {//ÕâÀï¶Ôid×öµÄ´¦ÀíÊ²Ã´ÒâË¼?Äª·ÇÊÇÒª¸üĞÂid?
+    if (settings.lru_maintainer_thread) {//ÕâÀï¶Ôid×öµÄ´¦ÀíÊ²Ã´ÒâË¼å Äª·ÇÊÇÒª¸üĞÂidå
         if (exptime == 0 && settings.expirezero_does_not_evict) {
             id |= NOEXP_LRU;
         } else {
@@ -807,7 +807,7 @@ item *do_item_get(const char *key, const size_t nkey, const uint32_t hv, conn *c
                 fprintf(stderr, " -nuked by flush");
             }
             was_found = 2;//±»Ë¢ĞÂµô
-        } else if (it->exptime != 0 && it->exptime <= current_time) {//Èç¹ûÊÇ0¾Í²»»á¹ıÆÚ?
+        } else if (it->exptime != 0 && it->exptime <= current_time) {//Èç¹ûÊÇ0¾Í²»»á¹ıÆÚ£
             do_item_unlink(it, hv);
             do_item_remove(it);//????
             it = NULL;
@@ -863,14 +863,14 @@ static int lru_pull_tail(const int orig_id, const int cur_lru,
     unsigned int move_to_lru = 0;
     uint64_t limit = 0;
 
-    id |= cur_lru;//ÕâÀïÎªÊ²Ã´ÒªÕâÑù´¦Àí?
+    id |= cur_lru;//ÕâÀïÎªÊ²Ã´ÒªÕâÑù´¦Àíå
     pthread_mutex_lock(&lru_locks[id]);//Ê×ÏÈ¶ÔLRU¶ÓÁĞ¼ÓËø
     search = tails[id];//´ÓÎ²°Í¿ªÊ¼ËÑË÷
     /* We walk up *only* for locked items, and if bottom is expired. */
     for (; tries > 0 && search != NULL; tries--, search=next_it) {
         /* we might relink search mid-loop, so search->prev isn't reliable */
         next_it = search->prev;
-        if (search->nbytes == 0 && search->nkey == 0 && search->it_flags == 1) {//ÕâÑùµÄitem´ú±íÊ²Ã´ÄØ?
+        if (search->nbytes == 0 && search->nkey == 0 && search->it_flags == 1) {//ÕâÑùµÄitem´ú±íÊ²Ã´ÄØå
            //////////Êµ¼ÊÖµÎª2
             if (flags & LRU_PULL_CRAWL_BLOCKS) { /* We are a crawler, ignore it. */// ÍË³ö³ÌĞò
                 pthread_mutex_unlock(&lru_locks[id]);
@@ -1223,7 +1223,7 @@ void lru_maintainer_resume(void) {
 
 int init_lru_maintainer(void) {
     if (lru_maintainer_initialized == 0) {
-        pthread_mutex_init(&lru_maintainer_lock, NULL);//³õÊ¼»¯»¥³âËø
+        pthread_mutex_init(&lru_maintainer_lock, NULL);
         lru_maintainer_initialized = 1;
     }
     return 0;

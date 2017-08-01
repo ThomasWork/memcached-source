@@ -108,7 +108,7 @@ static void write_bin_error(conn *c, protocol_binary_response_status err,
 static void conn_free(conn *c);
 
 /** exported globals **/
-//±»µ¼³öµÄÈ«¾Ö±äÁ¿
+//µ¼³öµÄÈ«¾Ö±äÁ¿
 struct stats stats;
 struct stats_state stats_state;
 struct settings settings;
@@ -116,8 +116,7 @@ time_t process_started;     /* when the process was started */
 conn **conns;
 
 struct slab_rebalance slab_rebal;
-volatile int slab_rebalance_signal;//£¨1£©¸æËß±àÒëÆ÷²»×öÓÅ»¯£¬£¨2£©Ã¿´Î´ÓÄÚ´æÖĞ¶ÁÈ¡¸ÃÖµ£¬¶ø²»ÊÇÀûÓÃcache»ò¼Ä´æÆ÷ÖĞµÄÖµ
-//¾ßÌåvolatileµÄ×÷ÓÃ¿ÉÒÔ²Î¼ûÍøÖ·£ºhttp://blog.csdn.net/tigerjibo/article/details/7427366
+volatile int slab_rebalance_signal;
 
 /** file scope variables **/
 //ÎÄ¼ş·¶Î§ÄÚµÄ±äÁ¿
@@ -141,7 +140,7 @@ static enum transmit_result transmit(conn *c);
  */
 static volatile bool allow_new_conns = true;//ÊÇ·ñÔÊĞíĞÂµÄÁ¬½Ó½øÈë£¬
 									//µ±¹Ø±ÕÒ»¸öÁ¬½ÓÊ±£¬¸ÃÖµ±»ÉèÖÃÎªÕæ
-									//ËùÒÔ£¬Èç¹ûÁ¬½ÓÊıÄ¿´ïµ½ÁË×î´óÖµ£¬¸ÃÖµÎª¼Ù?
+									//ËùÒÔ£¬Èç¹ûÁ¬½ÓÊıÄ¿´ïµ½ÁË×î´óÖµ£¬¸ÃÖµÎª¼Ùå
 static struct event maxconnsevent;
 
 
@@ -637,7 +636,7 @@ static void conn_release_items(conn *c) {
 static void conn_cleanup(conn *c) {
     assert(c != NULL);
 
-    conn_release_items(c);//Çå¿ÕÁ¬½ÓÀïÃæµÄitems£¬µ«ÊÇÕâĞ©itemsµ½µ×ÓĞÊ²Ã´ÓÃ?
+    conn_release_items(c);//Çå¿ÕÁ¬½ÓÀïÃæµÄitems£¬µ«ÊÇÕâĞ©itemsµ½µ×ÓĞÊ²Ã´ÓÃå
 
     if (c->write_and_free) {
         free(c->write_and_free);
@@ -3382,7 +3381,7 @@ static void process_update_command(conn *c, token_t *tokens, const size_t ntoken
 
     assert(c != NULL);
 
-    set_noreply_maybe(c, tokens, ntokens);//ÉèÖÃÊÇ·ñĞèÒª»Ø¸´?
+    set_noreply_maybe(c, tokens, ntokens);//ÉèÖÃÊÇ·ñĞèÒª»Ø¸´å
 
     if (tokens[KEY_TOKEN].length > KEY_MAX_LENGTH) {
         out_string(c, "CLIENT_ERROR bad command line format");
@@ -4260,7 +4259,7 @@ static enum try_read_result try_read_udp(conn *c) {
     res = recvfrom(c->sfd, c->rbuf, c->rsize,
                    0, (struct sockaddr *)&c->request_addr,
                    &c->request_addr_size);
-    if (res > 8) {//ÕâÀïÎªÊ²Ã´Òª´óÓÚ8ÄØ£¬8ÊÇËæ±ãÖ¸¶¨µÄÒ»¸ö´óÓÚ0µÄÊı×Ö?
+    if (res > 8) {//ÕâÀïÎªÊ²Ã´Òª´óÓÚ8ÄØ£¬8ÊÇËæ±ãÖ¸¶¨µÄÒ»¸ö´óÓÚ0µÄÊı×Öå
         unsigned char *buf = (unsigned char *)c->rbuf;
         pthread_mutex_lock(&c->thread->stats.mutex);
         c->thread->stats.bytes_read += res;
@@ -4340,7 +4339,7 @@ static enum try_read_result try_read_network(conn *c) {
         int avail = c->rsize - c->rbytes;//¿ÉÒÔ¶ÁÈëÕâÃ´¶àÄÚÈİ
         res = read(c->sfd, c->rbuf + c->rbytes, avail);
         if (res > 0) {
-            pthread_mutex_lock(&c->thread->stats.mutex);//ÕâÀï¸üĞÂÏß³ÌÄÚ²¿×´Ì¬ÊÇ·ñÓĞ±ØÒª¼ÓËøÄØ?
+            pthread_mutex_lock(&c->thread->stats.mutex);//ÕâÀï¸üĞÂÏß³ÌÄÚ²¿×´Ì¬ÊÇ·ñÓĞ±ØÒª¼ÓËøÄØå
             c->thread->stats.bytes_read += res;
             pthread_mutex_unlock(&c->thread->stats.mutex);
             gotdata = READ_DATA_RECEIVED;
@@ -5293,7 +5292,7 @@ static int server_socket_unix(const char *path, int access_mask) {
 volatile rel_time_t current_time;
 static struct event clockevent;
 
-//libeventÊ¹ÓÃµ¥µ÷Ê±¼ä½øĞĞÊÂ¼şµ÷¶È£¬³ıÁËjitter?
+//libeventÊ¹ÓÃµ¥µ÷Ê±¼ä½øĞĞÊÂ¼şµ÷¶È£¬³ıÁËjitter£
 /* libevent uses a monotonic clock when available for event scheduling. Aside
  * from jitter, simply ticking our internal timer here is accurate enough.
  * Note that users who are setting explicit dates for expiration times *must*
@@ -5556,7 +5555,6 @@ static void remove_pidfile(const char *pid_file) {
 
 }
 
-//¿ÉÒÔÓÃÀ´´¦ÀíÖĞ¶ÏĞÅºÅ£¬strsignal·µ»ØĞÅºÅµÄ×Ö·û´®ÃèÊö·û£¬ÔÚÏÂ´Îµ÷ÓÃ¸Ãº¯ÊıÊ±×Ö·û´®Ê§Ğ§
 static void sig_handler(const int sig) {
     printf("Signal handled: %s.\n", strsignal(sig));
     exit(EXIT_SUCCESS);
@@ -5621,8 +5619,6 @@ static int enable_large_pages(void) {
  * Do basic sanity check of the runtime environment
  * @return true if no errors found, false if we can't use this env
  */
- //memcached.c
- //¶ÔÔËĞĞÊ±»·¾³½øĞĞ»ù±¾µÄ¿ÉÓÃĞÔ²âÊÔ£¬Èç¹ûÃ»ÓĞ´íÎó·µ»Øtrue£¬·ñÔò²»ÄÜÊ¹ÓÃ¸Ã»·¾³
 static bool sanitycheck(void) {
     /* One of our biggest problems is old and bogus libevents */
     const char *ever = event_get_version();
@@ -5758,15 +5754,16 @@ int main (int argc, char **argv) {
         NULL
     };
 
-    if (!sanitycheck()) {//¿ÉÓÃĞÔ²âÊÔ,Í¨¹ı²âÊÔÔò·µ»Øtrue
+    if (!sanitycheck()) {////////////////////////////////////¿ÉÓÃĞÔ²âÊÔ
         return EX_OSERR;
     }
 
     /* handle SIGINT and SIGTERM *///¶ÔĞÅºÅ½øĞĞ´¦Àí
-    signal(SIGINT, sig_handler);//ÖĞ¶ÏĞÅºÅ£¬ctrl+c
-    signal(SIGTERM, sig_handler);//killÃüÁî·¢³öµÄĞÅºÅ
+    signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler);
 
-    settings_init();//¶Ô³ÌĞòÔËĞĞĞèÒªµÄ²ÎÊı½øĞĞ³õÊ¼»¯
+    /* init settings */
+    settings_init();//¶ÔÔËĞĞµÄ²ÎÊı½øĞĞ³õÊ¼»¯
 
     /* Run regardless of initializing it later
 ÕâÀï¾Í²»ÖªµÀËûÏë±í´ïÊ²Ã´ÁË
@@ -5775,7 +5772,8 @@ int main (int argc, char **argv) {
     init_lru_maintainer();
 
     /* set stderr non-buffering (for running under, say, daemontools)
-    setbuf(stderr, NULL);//ÎªstderrÖ¸¶¨»º³å£¬ÕâÀïÉèÖÃÎªNULL£¬±íÊ¾Ö±½ÓÊä³ö
+    ¹Ø±Õ»º³å»úÖÆ£¬ÕâÀïÊÇÎªÊ²Ã´ÄØå**/
+    setbuf(stderr, NULL);
 
     /* process arguments */
     while (-1 != (c = getopt(argc, argv,
@@ -6270,14 +6268,14 @@ int main (int argc, char **argv) {
         settings.port = settings.udpport;
     }
 
-    if (maxcore != 0) {//ÕâÀïµÄmaxcoreÊ²Ã´ÒâË¼?
+    if (maxcore != 0) {//ÕâÀïµÄmaxcoreÊ²Ã´ÒâË¼å
         struct rlimit rlim_new;
         /*
          * First try raising to infinity; if that fails, try bringing
          * the soft limit to the hard.
          */
-        if (getrlimit(RLIMIT_CORE, &rlim) == 0) {//RLIMIT_CORE±íÊ¾ÄÚºË×ª´æÎÄ¼şµÄ×î´ó³¤¶È
-            rlim_new.rlim_cur = rlim_new.rlim_max = RLIM_INFINITY;//RLIM_INFINITY±íÊ¾²»¶Ô×ÊÔ´½øĞĞÏŞÖÆ
+        if (getrlimit(RLIMIT_CORE, &rlim) == 0) {
+            rlim_new.rlim_cur = rlim_new.rlim_max = RLIM_INFINITY;
             if (setrlimit(RLIMIT_CORE, &rlim_new)!= 0) {
                 /* failed. try raising just to the old max */
                 rlim_new.rlim_cur = rlim_new.rlim_max = rlim.rlim_max;
@@ -6299,7 +6297,7 @@ int main (int argc, char **argv) {
 
 
 //Èç¹ûÓĞĞèÒª£¬°Ñ×ÊÔ´ÏŞÖÆÔö¼ÓÀ´ÔÊĞí½ÓÊÕ¸ü¶àÁ¬½Ó
-    if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {//±È½ø³Ì¿É´ò¿ªµÄ×î´óÃèÊö·ûÊı´ó1£¬³¬¹ı´ËÖµ½«»á²úÉúEMFILE
+    if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
         fprintf(stderr, "failed to getrlimit number of files\n");
         exit(EX_OSERR);
     } else {
@@ -6385,12 +6383,12 @@ int main (int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    if (start_lru_crawler && start_item_crawler_thread() != 0) {//Õâ¸öÏß³ÌÊÇÓÃÀ´×öÊ²Ã´µÄ?
+    if (start_lru_crawler && start_item_crawler_thread() != 0) {//Õâ¸öÏß³ÌÊÇÓÃÀ´×öÊ²Ã´µÄå
         fprintf(stderr, "Failed to enable LRU crawler thread\n");
         exit(EXIT_FAILURE);
     }
 
-    if (start_lru_maintainer && start_lru_maintainer_thread() != 0) {//LRUÏß³ÌÊÇÓÃÀ´×öÊ²Ã´µÄ?
+    if (start_lru_maintainer && start_lru_maintainer_thread() != 0) {//LRUÏß³ÌÊÇÓÃÀ´×öÊ²Ã´µÄå
         fprintf(stderr, "Failed to enable LRU maintainer thread\n");
         return 1;
     }

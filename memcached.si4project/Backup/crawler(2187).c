@@ -89,7 +89,7 @@ static crawler crawlers[LARGEST_ID];
 
 static int crawler_count = 0;
 static volatile int do_run_lru_crawler_thread = 0;
-static int lru_crawler_initialized = 0;//lru爬虫是否已经被初始化
+static int lru_crawler_initialized = 0;
 static pthread_mutex_t lru_crawler_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t  lru_crawler_cond = PTHREAD_COND_INITIALIZER;
 
@@ -616,7 +616,7 @@ void lru_crawler_resume(void) {
 
 int init_lru_crawler(void) {
     if (lru_crawler_initialized == 0) {
-        if (pthread_cond_init(&lru_crawler_cond, NULL) != 0) {//初始化条件变量
+        if (pthread_cond_init(&lru_crawler_cond, NULL) != 0) {
             fprintf(stderr, "Can't initialize lru crawler condition\n");
             return -1;
         }

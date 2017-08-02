@@ -6335,7 +6335,7 @@ int main (int argc, char **argv) {
 	//如果要求作为守护进程
 	//如果想确保有dump core的能力，不要将当前目录变更为/
     if (do_daemonize) {
-        if (sigignore(SIGHUP) == -1) {//http://blog.csdn.net/cugxueyu/article/details/2046565
+        if (sigignore(SIGHUP) == -1) {
             perror("Failed to ignore SIGHUP");
         }
         if (daemonize(maxcore, settings.verbose) == -1) {//创建守护进程

@@ -509,7 +509,6 @@ static int start_logger_thread(void) {
  *************************/
 
 /* Global logger thread start/init */
-//全局日志线程初始化
 void logger_init(void) {
     /* TODO: auto destructor when threads exit */
     /* TODO: error handling */
@@ -517,7 +516,7 @@ void logger_init(void) {
     /* init stack for iterating loggers */
     logger_stack_head = 0;
     logger_stack_tail = 0;
-    pthread_key_create(&logger_key, NULL);//http://www.jianshu.com/p/d52c1ebf808a
+    pthread_key_create(&logger_key, NULL);
 
     if (start_logger_thread() != 0) {
         abort();

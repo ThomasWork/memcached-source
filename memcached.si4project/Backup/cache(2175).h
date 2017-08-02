@@ -43,7 +43,6 @@ typedef void cache_destructor_t(void* obj, void* notused);
  * the cache allocator. Touching any of these variables results in
  * undefined behavior.
  */
-//追踪cache分配器内部细节的结构，修改任何变量会导致不可预测的行为
 typedef struct {
     /** Mutex to protect access to the structure */
     pthread_mutex_t mutex;

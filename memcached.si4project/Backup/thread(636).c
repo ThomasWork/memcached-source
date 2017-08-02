@@ -30,7 +30,7 @@ struct conn_queue_item {
 
 //连接队列
 typedef struct conn_queue CQ;
-struct conn_queue {//每个连接队列都有一个互斥锁
+struct conn_queue {
     CQ_ITEM *head;
     CQ_ITEM *tail;
     pthread_mutex_t lock;
@@ -55,14 +55,14 @@ pthread_mutex_t atomics_mutex = PTHREAD_MUTEX_INITIALIZER;
 //为全局状态而建立的锁
 static pthread_mutex_t stats_lock = PTHREAD_MUTEX_INITIALIZER;
 
-//在工作线程被唤醒之后，用来挂起工作线程
+//用来挂起工作线程在它被唤醒之后
 static pthread_mutex_t worker_hang_lock;
 
 /* Free list of CQ_ITEM structs */
 static CQ_ITEM *cqi_freelist;//空闲的CQ_ITEM结构
 static pthread_mutex_t cqi_freelist_lock;
 
-static pthread_mutex_t *item_locks;//根据线程的数量分配的锁
+static pthread_mutex_t *item_locks;
 /* size of the item lock hash table */
 static uint32_t item_lock_count;
 unsigned int item_lock_hashpower;
@@ -331,7 +331,7 @@ void accept_new_conns(const bool do_accept) {
 
  //设置线程的信息
 static void setup_thread(LIBEVENT_THREAD *me) {
-    me->base = event_init();//新的eventbase？
+    me->base = event_init();//这里创建了新的event_base
     if (! me->base) {
         fprintf(stderr, "Can't allocate event base\n");
         exit(1);
@@ -352,7 +352,7 @@ static void setup_thread(LIBEVENT_THREAD *me) {
         perror("Failed to allocate memory for connection queue");
         exit(EXIT_FAILURE);
     }
-    cq_init(me->new_conn_queue);//初始化连接队列，主要是初始化互斥锁，以及令指针为NULL，
+    cq_init(me->new_conn_queue);//初始化连接队列
 
     if (pthread_mutex_init(&me->stats.mutex, NULL) != 0) {//初始化线程状态字段中的锁
         perror("Failed to initialize mutex");
@@ -777,10 +777,9 @@ void memcached_thread_init(int nthreads) {
         exit(1);
     }
 
-    item_lock_count = hashsize(power);//2的power次方
+    item_lock_count = hashsize(power);
     item_lock_hashpower = power;
 
-//calloc 与 malloc的区别之一是需要两个参数，分别指明元素个数和元素size，并且它会对分配的空间清零
     item_locks = calloc(item_lock_count, sizeof(pthread_mutex_t));//根据锁的数量分配空间
     if (! item_locks) {
         perror("Can't allocate item locks");

@@ -25,31 +25,33 @@
 /* powers-of-N allocation structures */
 
 typedef struct {
-    unsigned int size;      /* sizes of items */
-    unsigned int perslab;   /* how many items per slab */
+    unsigned int size;   //Ã¿Ò»¸öitemµÄ´óĞ¡   /* sizes of items */
+    unsigned int perslab;  //Ã¿¸öslab ÓĞ¶àÉÙitem  /* how many items per slab */
 
-    void *slots;           /* list of item ptrs */
-    unsigned int sl_curr;   /* total free items in list */
+    void *slots;     //itemÖ¸Õë¹¹³ÉµÄË«ÏòÁ´±í£¬¿ÕÏĞÁ´±í      /* list of item ptrs */
+    unsigned int sl_curr;  //¿ÕÏĞÁ´±íÖĞitem ×ÜÊı
 
-    unsigned int slabs;     /* how many slabs were allocated for this class */
+    unsigned int slabs; //Õâ¸öclass ±»·ÖÅä¶àÉÙslab    /* how many slabs were allocated for this class */
 
-    void **slab_list;       /* array of slab pointers */
-    unsigned int list_size; /* size of prev array */
+//ÔÚslabclass[0] ÖĞÔ¤ÏÈ·ÖÅäÁËÒ»Ğ©page(slab)£¬È»ºóget_page_from_global_pllÖĞ·µ»ØÒ»¸öpage
+    void **slab_list;  //slab Ö¸ÕëµÄÊı×é     /* array of slab pointers */
+    unsigned int list_size; //slab_listÊı×éµÄ´óĞ¡£¬Êµ¼ÊÉÏ´æ·ÅÊı¾İµÄĞ¡ÓÚlist_size /* size of prev array */
 
-    size_t requested; /* The number of requested bytes */
+    size_t requested; //±»ÇëÇóµÄ×Ö½ÚÊı£¬ÓÃÀ´Í³¼ÆÊ¹ÓÃÂÊ? /* The number of requested bytes */
 } slabclass_t;
 
-static slabclass_t slabclass[MAX_NUMBER_OF_SLAB_CLASSES];//×Ü¹²ÓĞÕâÃ´¶àslabclass
-static size_t mem_limit = 0;
+static slabclass_t slabclass[MAX_NUMBER_OF_SLAB_CLASSES];//slabclassÊı×é(63 + 1)
+static size_t mem_limit = 0;//×ÜµÄÄÚ´æÏŞÖÆ?
 static size_t mem_malloced = 0;
 /* If the memory limit has been hit once. Used as a hint to decide when to
  * early-wake the LRU maintenance thread */
-static bool mem_limit_reached = false;
-static int power_largest;
+static bool mem_limit_reached = false;//ÅĞ¶ÏÄÚ´æÏŞÖÆÊÇ·ñ´ïµ½¡£±»ÓÃÀ´×÷ÎªÒ»¸öÌáÊ¾£¬»½ĞÑLRU Ïß³Ì
+static int power_largest;//µÈÓÚslabclassµÄÊıÁ¿
 
-static void *mem_base = NULL;
-static void *mem_current = NULL;
-static size_t mem_avail = 0;
+//slabs.c
+static void *mem_base = NULL;//Ô¤·ÖÅäÒ»¸ö´óµÄ¿Õ¼ä£¬ÔÚºóĞøÇëÇóĞÂµÄ¿Õ¼äÊ±£¬´Ó¸Ã¿Õ¼ä»ñÈ¡£¬Èç¹ûÎª·ÖÅäÔò´ÓÏµÍ³ÉêÇë
+static void *mem_current = NULL;//mem_baseÖ±ÏßµÄÔ¤·ÖÅä¿Õ¼äÖĞ¿ÕÏĞÄÚ´æ¿ªÊ¼Î»ÖÃ
+static size_t mem_avail = 0;//mem_baseÖĞÊ£ÓàµÄ¿ÉÓÃÄÚ´æ
 
 /**
  * Access to the slab allocator is protected by this lock
@@ -90,14 +92,15 @@ unsigned int slabs_clsid(const size_t size) {
  * Determines the chunk sizes and initializes the slab class descriptors
  * accordingly.
  */
+ //slabs.c
+ //³õÊ¼»¯slabclass£¬Èç¹ûprealloc£¬ÄÇÃ´Ô¤ÏÈÎªÃ¿¸öslabclass·ÖÅäÒ»Ğ©¿ÕÏĞµÄitem
 void slabs_init(const size_t limit, const double factor, const bool prealloc, const uint32_t *slab_sizes) {
     int i = POWER_SMALLEST - 1;//Êµ¼ÊµÈÓÚ0
     unsigned int size = sizeof(item) + settings.chunk_size;//³ß´çµÈÓÚchunkµÄ´óĞ¡¼ÓÉÏ¶îÍâĞÅÏ¢µÄ´óĞ¡
 
     mem_limit = limit;
 
-    if (prealloc) {
-        /* Allocate everything in a big chunk with malloc */
+     if (prealloc) { /* Allocate everything in a big chunk with malloc *///Ê¹ÓÃmallocÔÚÒ»¸ö´óµÄchunk ÖĞ·ÖÅäËùÓĞ¿Õ¼ä
         mem_base = malloc(mem_limit);
         if (mem_base != NULL) {
             mem_current = mem_base;
@@ -110,29 +113,29 @@ void slabs_init(const size_t limit, const double factor, const bool prealloc, co
 
     memset(slabclass, 0, sizeof(slabclass));//½«slabclassÁĞ±íÇå¿Õ
 
-    while (++i < MAX_NUMBER_OF_SLAB_CLASSES-1) {
-        if (slab_sizes != NULL) {
+    while (++i < MAX_NUMBER_OF_SLAB_CLASSES-1) {//Õë¶ÔÃ¿Ò»¸öslabclass½øĞĞ³õÊ¼»¯£¬´Ó1¿ªÊ¼£¬0ºÅÓĞÆäËûÓÃ´¦
+        if (slab_sizes != NULL) {//Èç¹ûÖ¸¶¨ÁËÔªËØµÄsize£¬ÄÇÃ´Ê¹ÓÃÖ¸¶¨µÄÖµ
             if (slab_sizes[i-1] == 0)
                 break;
-            size = slab_sizes[i-1];
-        } else if (size >= settings.slab_chunk_size_max / factor) {
+            size = slab_sizes[i-1];//ÕâÀïÊ¹ÓÃi - 1
+        } else if (size >= settings.slab_chunk_size_max / factor) {//ÔÙ²»Ê¹ÓÃÊÖ¶¯ÅäÖÃÄÚ´æµÄÇé¿öÏÂ³¬¹ıÏŞÖÆ
             break;
         }
 		
-        if (size % CHUNK_ALIGN_BYTES)//8×Ö½Ú¶ÔÆë
+        if (size % CHUNK_ALIGN_BYTES)//½«size ½øĞĞ 8×Ö½Ú¶ÔÆë
             size += CHUNK_ALIGN_BYTES - (size % CHUNK_ALIGN_BYTES);
 
-        slabclass[i].size = size;//ÕâÀïµÄ³ß´çÓ¦¸Ã¶ÔÆëÖ®ºóµÄ³ß´ç
-        slabclass[i].perslab = settings.slab_page_size / slabclass[i].size;
+        slabclass[i].size = size;//¶ÔÆëÖ®ºóµÄ³ß´ç
+        slabclass[i].perslab = settings.slab_page_size / slabclass[i].size;//´æ·ÅµÄÔªËØÊıÁ¿?
         if (slab_sizes == NULL)
             size *= factor;
         if (settings.verbose > 1) {//Èç¹û´ò¿ªµ÷ÊÔĞÅÏ¢
-            fprintf(stderr, "slab class %3d: chunk size %9u perslab %7u\n",
+            fprintf(stderr, "slab class %3d: chunk size %9u perslab %7u\n",//Êä³öµ÷ÊÔĞÅÏ¢
                     i, slabclass[i].size, slabclass[i].perslab);
         }
     }
 
-    power_largest = i;
+    power_largest = i;//´ËÊ±i µÈÓÚMAX_NUMBER_OF_SLAB_CLASSES - 1
     slabclass[power_largest].size = settings.slab_chunk_size_max;
     slabclass[power_largest].perslab = settings.slab_page_size / settings.slab_chunk_size_max;
     if (settings.verbose > 1) {
@@ -142,7 +145,7 @@ void slabs_init(const size_t limit, const double factor, const bool prealloc, co
 
     /* for the test suite:  faking of how much we've already malloc'd */
     {
-        char *t_initial_malloc = getenv("T_MEMD_INITIAL_MALLOC");
+        char *t_initial_malloc = getenv("T_MEMD_INITIAL_MALLOC");//»ñÈ¡»·¾³±äÁ¿µÄÖµ
         if (t_initial_malloc) {
             mem_malloced = (size_t)atol(t_initial_malloc);
         }
@@ -150,7 +153,7 @@ void slabs_init(const size_t limit, const double factor, const bool prealloc, co
     }
 
     if (prealloc) {
-        slabs_preallocate(power_largest);
+        slabs_preallocate(power_largest);//ÎªÃ¿Ò»¸öslabclass ½øĞĞÔ¤·ÖÅä
     }
 }
 
@@ -163,9 +166,9 @@ static void slabs_preallocate (const unsigned int maxslabs) {
        messages.  this is the most common question on the mailing
        list.  if you really don't want this, you can rebuild without
        these three lines.  */
-
-    for (i = POWER_SMALLEST; i < MAX_NUMBER_OF_SLAB_CLASSES; i++) {
-        if (++prealloc > maxslabs)
+       //ÔÚ²»Í¬sizeµÄclassÖĞÔ¤·ÖÅäÒ»¸ö1 MB µÄslab
+    for (i = POWER_SMALLEST; i < MAX_NUMBER_OF_SLAB_CLASSES; i++) {//Êµ¼ÊÉÏÊÇ´Ó1µ½maxslabs
+        if (++prealloc > maxslabs)//ÕâÀïÒ²ÊÇ´Ó1¿ªÊ¼µÄ
             return;
         if (do_slabs_newslab(i) == 0) {
             fprintf(stderr, "Error while preallocating slab memory!\n"
@@ -177,11 +180,12 @@ static void slabs_preallocate (const unsigned int maxslabs) {
 
 }
 
+//Ôö¼Óslabclass[id]µÄslab_list
 static int grow_slab_list (const unsigned int id) {
     slabclass_t *p = &slabclass[id];
     if (p->slabs == p->list_size) {
-        size_t new_size =  (p->list_size != 0) ? p->list_size * 2 : 16;
-        void *new_list = realloc(p->slab_list, new_size * sizeof(void *));
+        size_t new_size =  (p->list_size != 0) ? p->list_size * 2 : 16;//Èç¹û²»µÈÓÚ0£¬³ËÒÔ2£¬·ñÔò·µ»Ø16
+        void *new_list = realloc(p->slab_list, new_size * sizeof(void *));//À©´óÖ¸ÕëÊı×é
         if (new_list == 0) return 0;
         p->list_size = new_size;
         p->slab_list = new_list;
@@ -189,28 +193,31 @@ static int grow_slab_list (const unsigned int id) {
     return 1;
 }
 
-//½«ĞÂ·ÖÅäµÄslab·Ö¸î³Éitem²¢³õÊ¼»¯ÀïÃæµÄÄÚÈİ
+//½«ĞÂ·ÖÅäµÄslab page·Ö¸î³Éitem²¢³õÊ¼»¯ÀïÃæµÄÄÚÈİ
 static void split_slab_page_into_freelist(char *ptr, const unsigned int id) {
     slabclass_t *p = &slabclass[id];
     int x;
     for (x = 0; x < p->perslab; x++) {
-        do_slabs_free(ptr, 0, id);
-        ptr += p->size;
+        do_slabs_free(ptr, 0, id);//Ã¿¸öptr»á±»×ª³ÉitemÖ¸Õë£¬
+        ptr += p->size;// Ö¸ÕëÏòºóÒÆ¶¯
     }
 }
 
+//slabs.c
+//¿ìËÙFIFO ¶ÓÁĞ
 /* Fast FIFO queue */
 static void *get_page_from_global_pool(void) {
     slabclass_t *p = &slabclass[SLAB_GLOBAL_PAGE_POOL];
     if (p->slabs < 1) {
         return NULL;
     }
-    char *ret = p->slab_list[p->slabs - 1];
+    char *ret = p->slab_list[p->slabs - 1];//slabs
     p->slabs--;
     return ret;
 }
 
-
+//slabs.c
+//ÔÚslabs_preallocate ÖĞµ÷ÓÃ£¬Îªslabclasses[id]½øĞĞÔ¤·ÖÅä
 //·ÖÅäÒ»¸öĞÂµÄslab£¬¼´chunkµÄ¼¯ºÏ
 static int do_slabs_newslab(const unsigned int id) {
     slabclass_t *p = &slabclass[id];
@@ -221,14 +228,14 @@ static int do_slabs_newslab(const unsigned int id) {
     char *ptr;
 
     if ((mem_limit && mem_malloced + len > mem_limit && p->slabs > 0
-         && g->slabs == 0)) {//ÕâÀïÅĞ¶ÏÊÇ·ñ»á³¬³ö¿Õ¼ä
-        mem_limit_reached = true;
+         && g->slabs == 0)) {//ÕâÀïÅĞ¶ÏÊÇ·ñ»á³¬³öÄÚ´æÏŞÖÆ
+        mem_limit_reached = true;//´ïµ½ÄÚ´æÏŞÖÆ
         MEMCACHED_SLABS_SLABCLASS_ALLOCATE_FAILED(id);
         return 0;
     }
 
-    if ((grow_slab_list(id) == 0) ||//Ôö³¤slabclass_tÊ§°Ü
-        (((ptr = get_page_from_global_pool()) == NULL) &&//´ÓÈ«¾Ö¿Õ¼ä·ÖÅäÒ³Ê§°Ü
+    if ((grow_slab_list(id) == 0) ||//Ôö³¤slabclass[id] µÄslab_list
+        (((ptr = get_page_from_global_pool()) == NULL) &&//´ÓÈ«¾Ö¿Õ¼ä·ÖÅäÒ³slab£¬È«¾ÖpoolÊÇÊ²Ã´Ê±¼ä·ÖÅäµÄ?
         ((ptr = memory_allocate((size_t)len)) == 0))) {//´Ómemory·ÖÅä¿Õ¼äÊ§°Ü
 
         MEMCACHED_SLABS_SLABCLASS_ALLOCATE_FAILED(id);
@@ -236,9 +243,9 @@ static int do_slabs_newslab(const unsigned int id) {
     }
 
     memset(ptr, 0, (size_t)len);//Çå¿Õ
-    split_slab_page_into_freelist(ptr, id);
+    split_slab_page_into_freelist(ptr, id);//½«ĞÂ·ÖÅäµÄslab page ²ğ·Ö³Éitem·Åµ½slotsÖĞ
 
-    p->slab_list[p->slabs++] = ptr;
+    p->slab_list[p->slabs++] = ptr;//¸üĞÂ¸Ãslabclass µÄslab_list
     MEMCACHED_SLABS_SLABCLASS_ALLOCATE(id);
 
     return 1;
@@ -401,9 +408,8 @@ static void do_slabs_free_chunked(item *it, const size_t size, unsigned int id,
     return;
 }
 
-
+//slabs.c
 //Çå¿Õitem ÖĞµÄĞÅÏ¢£¬½«Æä·Åµ½slotsÖĞ
-// 
 static void do_slabs_free(void *ptr, const size_t size, unsigned int id) {
     slabclass_t *p;
     item *it;
@@ -416,18 +422,18 @@ static void do_slabs_free(void *ptr, const size_t size, unsigned int id) {
     p = &slabclass[id];
 
     it = (item *)ptr;
-    if ((it->it_flags & ITEM_CHUNKED) == 0) {//ÔÚÕâÒ»²½Ö®Ç°ĞèÒªÉèÖÃit_flagså 
-        it->it_flags = ITEM_SLABBED;//Ò»¿ªÊ¼·ÖÅäµÄÊ±ºòÓ¦¸Ã¶¼ÊÇµÈÓÚ0 µÄå
+    if ((it->it_flags & ITEM_CHUNKED) == 0) {//¸Ã¶ÎÄÚ´æÒÑ¾­±»Çå¿Õ
+        it->it_flags = ITEM_SLABBED;//Ò»¿ªÊ¼·ÖÅäµÄÊ±ºòÓ¦¸Ã¶¼ÊÇµÈÓÚ0 µÄ
         it->slabs_clsid = 0;//ÕâÀïÎªÊ²Ã´²»ÉèÖÃÎªµ±Ç°idå
         it->prev = 0;
-        it->next = p->slots;
+        it->next = p->slots;//¿ÕÏĞË«ÏòÁ´±í
         if (it->next) it->next->prev = it;
         p->slots = it;
 
         p->sl_curr++;
-        p->requested -= size;
+        p->requested -= size;//size ¿ÉÄÜµÈÓÚ0
     } else {
-        do_slabs_free_chunked(it, size, id, p);
+        do_slabs_free_chunked(it, size, id, p);//ÊÍ·ÅchunkedµÄ?
     }
     return;
 }
@@ -531,6 +537,8 @@ static void do_slabs_stats(ADD_STAT add_stats, void *c) {
     add_stats(NULL, 0, NULL, 0, c);
 }
 
+//slabs.c
+//ÄÚ´æ·ÖÅä£¬Èç¹ûÊ¹ÓÃÁËÔ¤·ÖÅä£¬Ôò´ÓÔ¤·ÖÅäµÄ¿Õ¼äÖĞ·ÖÅä£¬·ñÔòÏòÏµÍ³ÉêÇë
 static void *memory_allocate(size_t size) {
     void *ret;
 
@@ -543,9 +551,9 @@ static void *memory_allocate(size_t size) {
         if (size > mem_avail) {
             return NULL;
         }
-
-        //µ±Ç°ÄÚ´æÖ¸Õë±ØĞë¶ÔÆë
-        if (size % CHUNK_ALIGN_BYTES) {
+	//8×Ö½Ú¶ÔÆë£¬²»¿ÉÄÜ³öÏÖ¶ÔÆëÖ®Ç°Î´³¬¹ı£¬µ«ÊÇ¶ÔÆëÖ®ºó³¬¹ıµÄÇé¿ö
+	//ÒòÎª¶¼ÊÇ8×Ö½Ú¶ÔÆëµÄ
+        if (size % CHUNK_ALIGN_BYTES) { 
             size += CHUNK_ALIGN_BYTES - (size % CHUNK_ALIGN_BYTES);
         }
 

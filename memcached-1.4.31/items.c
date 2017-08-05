@@ -352,7 +352,7 @@ static void item_unlink_q(item *it) {
 //只在这个函数中调用了assoc_insert
 int do_item_link(item *it, const uint32_t hv) {
     MEMCACHED_ITEM_LINK(ITEM_key(it), it->nkey, it->nbytes);
-    assert((it->it_flags & (ITEM_LINKED|ITEM_SLABBED)) == 0);
+    assert((it->it_flags & (ITEM_LINKED|ITEM_SLABBED)) == 0);//检查状态
     it->it_flags |= ITEM_LINKED;//item
     it->time = current_time;
 
@@ -431,7 +431,7 @@ void do_item_update_nolock(item *it) {
 }
 
 /* Bump the last accessed time, or relink if we're in compat mode *///颠簸、碰撞，冲撞
-//更新最后访问时间，或者重新连接如果我们在兼容性 模式
+//更新item的访问时间，如果距离上次访问时间太短，那么就不更新
 void do_item_update(item *it) {
     MEMCACHED_ITEM_UPDATE(ITEM_key(it), it->nkey, it->nbytes);
     if (it->time < current_time - ITEM_UPDATE_INTERVAL) {//如果更新时间 大于60秒

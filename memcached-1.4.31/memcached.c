@@ -2597,6 +2597,7 @@ enum store_item_type do_store_item(item *it, int comm, conn *c, const uint32_t h
 
     if (old_it != NULL && comm == NREAD_ADD) {//该元素存在并且命令是添加元素
         /* add only adds a nonexistent item, but promote to head of LRU */
+	//add 仅仅 添加一个不存在的item，但是把它放在LRU 的头部
         do_item_update(old_it);//更新item的时间，并把它移到队列末尾
     } else if (!old_it && (comm == NREAD_REPLACE//如果元素不存在
         || comm == NREAD_APPEND || comm == NREAD_PREPEND))
@@ -2671,9 +2672,9 @@ enum store_item_type do_store_item(item *it, int comm, conn *c, const uint32_t h
 
         if (stored == NOT_STORED && failed_alloc == 0) {
             if (old_it != NULL)
-                item_replace(old_it, it, hv);
+                item_replace(old_it, it, hv);//进行替换
             else
-                do_item_link(it, hv);
+                do_item_link(it, hv);//添加到链表中
 
             c->cas = ITEM_get_cas(it);
 

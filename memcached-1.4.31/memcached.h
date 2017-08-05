@@ -101,7 +101,7 @@
     } \
 }
 
-#define ITEM_key(item) (((char*)&((item)->data)) \
+#define ITEM_key(item) (((char*)&((item)->data)) \  //强制类型转换为char *
          + (((item)->it_flags & ITEM_CAS) ? sizeof(uint64_t) : 0))
 
 #define ITEM_suffix(item) ((char*) &((item)->data) + (item)->nkey + 1 \
@@ -406,29 +406,31 @@ extern struct settings settings;
 /**
  * Structure for storing items within memcached.
  */
+ //memcached.h
+ //在memcached中存储item的结构
 typedef struct _stritem {
-    /* Protected by LRU locks */
+    /* Protected by LRU locks *///被LRU 锁保护
     struct _stritem *next;
     struct _stritem *prev;
-    /* Rest are protected by an item lock */
-    struct _stritem *h_next;    /* hash chain next */
-    rel_time_t      time;       /* least recent access */
-    rel_time_t      exptime;    /* expire time */
-    int             nbytes;     /* size of data */
-    unsigned short  refcount;
+    /* Rest are protected by an item lock *///剩下的被一个item 锁保护
+    struct _stritem *h_next;   //指向hash链表中的下一个节点
+    rel_time_t      time;      //最近访问时间 /* least recent access */
+    rel_time_t      exptime;   //过期时间 
+    int             nbytes;    //数据的大小
+    unsigned short  refcount;//引用计数，这个在锁的时候好像有妙用
     uint8_t         nsuffix;    /* length of flags-and-length string */
     uint8_t         it_flags;   //item 当前的状态，是否是linked，chunked等等
-    uint8_t         slabs_clsid;/* which slab class we're in */
-    uint8_t         nkey;       /* key length, w/terminating null and padding */
+    uint8_t         slabs_clsid; //处于哪个slab class 中/* which slab class we're in */
+    uint8_t         nkey;     //key的长度  /* key length, w/terminating null and padding */
     /* this odd type prevents type-punning issues when we do
      * the little shuffle to save space when not using CAS. */
     union {
         uint64_t cas;
         char end;
     } data[];
-    /* if it_flags & ITEM_CAS we have 8 bytes CAS */
-    /* then null-terminated key */
-    /* then " flags length\r\n" (no terminating null) */
+    /* if it_flags & ITEM_CAS we have 8 bytes CAS *///如果it_flags & ITEM_CAS，那么就使用8 bytes CAS，以及以null 结尾的key
+    /* then null-terminated key */                                
+    /* then " flags length\r\n" (no terminating null) */ //然后是"flagg length\r\n"(没有终止符null)，然后是以\r\n 结尾的data
     /* then data with terminating \r\n (no terminating null; it's binary!) */
 } item;
 
@@ -566,7 +568,7 @@ struct conn {
     /* Binary protocol stuff */
     /* This is where the binary header goes */
     protocol_binary_request_header binary_header;
-    uint64_t cas; /* the cas to return */
+    uint64_t cas; //将要返回的cas    /* the cas to return */
     short cmd; //目前正要处理的命令
     int opaque;
     int keylen;

@@ -40,6 +40,7 @@ typedef struct {
     rel_time_t evicted_time;
 } itemstats_t;
 
+//在对lru队列进行操作时，首先需要加锁，锁放在thread.c 中:)
 static item *heads[LARGEST_ID];
 static item *tails[LARGEST_ID];
 static itemstats_t itemstats[LARGEST_ID];

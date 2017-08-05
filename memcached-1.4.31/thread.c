@@ -38,7 +38,7 @@ struct conn_queue {//每个连接队列都有一个互斥锁
 
 // LRU 锁
 /* Locks for cache LRU operations */
-pthread_mutex_t lru_locks[POWER_LARGEST];
+pthread_mutex_t lru_locks[POWER_LARGEST];//lru 操作时加的锁
 
 
 //连接锁，用来设置是否接收新的连接
@@ -62,12 +62,11 @@ static pthread_mutex_t worker_hang_lock;
 static CQ_ITEM *cqi_freelist;//空闲的CQ_ITEM结构
 static pthread_mutex_t cqi_freelist_lock;
 
-static pthread_mutex_t *item_locks;//根据线程的数量分配的锁
-/* size of the item lock hash table */
-static uint32_t item_lock_count;
-unsigned int item_lock_hashpower;
+static pthread_mutex_t *item_locks;//根据线程的数量分配的锁，数量等于item_lock_count
+static uint32_t item_lock_count;//等于hashsize(item_lock_hashpower)  2 的item_lock_hashpower次方
+unsigned int item_lock_hashpower;//最大为13，根据线程数量设置
 #define hashsize(n) ((unsigned long int)1<<(n))
-#define hashmask(n) (hashsize(n)-1)
+#define hashmask(n) (hashsize(n)-1)//与该值进行& 操作会把高位置0
 
 /*
  * Each libevent instance has a wakeup pipe, which other threads
@@ -131,7 +130,7 @@ unsigned short refcount_decr(unsigned short *refcount) {
  //LRU 中移除
 
 void item_lock(uint32_t hv) {
-    mutex_lock(&item_locks[hv & hashmask(item_lock_hashpower)]);
+    mutex_lock(&item_locks[hv & hashmask(item_lock_hashpower)]);//得到对应的锁，但是这个锁锁住了多个桶
 }
 
 void *item_trylock(uint32_t hv) {

@@ -28,7 +28,7 @@
 //首先定义了三个互斥锁
 static pthread_cond_t maintenance_cond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t maintenance_lock = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t hash_items_counter_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t hash_items_counter_lock = PTHREAD_MUTEX_INITIALIZER;//在更新item的数量时加锁
 
 typedef  unsigned long  int  ub4;   /* unsigned 4-byte quantities */
 typedef  unsigned       char ub1;   /* unsigned 1-byte quantities */
@@ -41,18 +41,11 @@ unsigned int hashpower = HASHPOWER_DEFAULT;//初始值为16
 #define hashmask(n) (hashsize(n)-1)
 
 //主哈希表，这是我们查找的地方除非是在扩展过程中
-static item** primary_hashtable = 0;//二维数组，每一项代表一个item的指针
-
-/*
- * Previous hash table. During expansion, we look here for keys that haven't
- * been moved over to the primary yet.
- */
- //之前的哈希表。在扩展过程中，我们从这里查找还没有被移动到主表的键值
+static item** primary_hashtable = 0;//二维数组，每一元素是一个桶，
+ //旧的哈希表。在扩展过程中，从这里查找还没有被移动到主表的键值
 static item** old_hashtable = 0;
-
 //hash表中有多少元素
-static unsigned int hash_items = 0;
-
+static unsigned int hash_items = 0;//assoc_insert中调用
 //标记: 指示是否正处于扩展过程中
 static bool expanding = false;
 static bool started_expanding = false;

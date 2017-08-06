@@ -6359,13 +6359,13 @@ int main (int argc, char **argv) {
     }
 
     /* initialize main thread libevent instance */
-    main_base = event_init();//初始化主libevent线程---------------------------------------
+    main_base = event_init();//初始化主libevent线程libevent 实例---------------------------------------
 
     /* initialize other stuff */
     logger_init();
     stats_init();
-    assoc_init(settings.hashpower_init);
-    conn_init();
+    assoc_init(settings.hashpower_init);//哈希表初始的size
+    conn_init();//创建了一个数组，数组中的元素类型是指向conn的指针
     slabs_init(settings.maxbytes, settings.factor, preallocate,
             use_slab_sizes ? slab_sizes : NULL);
 
@@ -6379,7 +6379,7 @@ int main (int argc, char **argv) {
         exit(EX_OSERR);
     }
 
-	//开启n个子线程
+	//开启num_threads 个子线程
     memcached_thread_init(settings.num_threads);
 
     if (start_assoc_maintenance_thread() == -1) {//开启扩容线程

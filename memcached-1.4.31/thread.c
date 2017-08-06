@@ -79,7 +79,7 @@ static LIBEVENT_THREAD *threads;//所有线程构成的数组，访问具体线程时，使用thread
 /*
  * Number of worker threads that have finished setting themselves up.
  */
-static int init_count = 0;
+static int init_count = 0;//完成初始化的线程的数量
 static pthread_mutex_t init_lock;//初始化锁，用来等待所有线程注册
 static pthread_cond_t init_cond;//条件变量
 
@@ -305,6 +305,7 @@ static void cqi_free(CQ_ITEM *item) {
 /*
  * Creates a worker thread.
  */
+ //创建一个worker 线程
 static void create_worker(void *(*func)(void *), void *arg) {
     pthread_attr_t  attr;
     int             ret;
@@ -336,7 +337,7 @@ static void setup_thread(LIBEVENT_THREAD *me) {
         exit(1);
     }
 
-    /* Listen for notifications from other threads */
+	//监听来自其他线程的notification
     event_set(&me->notify_event, me->notify_receive_fd,
               EV_READ | EV_PERSIST, thread_libevent_process, me);//是用持续的，可读属性
     event_base_set(me->base, &me->notify_event);
@@ -379,7 +380,7 @@ static void *worker_libevent(void *arg) {
         abort();
     }
 
-    register_thread_initialized();
+    register_thread_initialized();//注册线程，主要是: init_count++;
 
     event_base_loop(me->base, 0);
     return NULL;
@@ -741,8 +742,9 @@ void slab_stats_aggregate(struct thread_stats *stats, struct slab_stats *out) {
  *
  * nthreads  Number of worker event handler threads to spawn
  */
+ //thread.c
  //初始化线程子系统，创建各种各样的工作线程
-
+//nthreads: worker线程的数量
 void memcached_thread_init(int nthreads) {
     int         i;
     int         power;
@@ -803,17 +805,17 @@ void memcached_thread_init(int nthreads) {
             exit(1);
         }
 
-        threads[i].notify_receive_fd = fds[0];
+        threads[i].notify_receive_fd = fds[0];//
         threads[i].notify_send_fd = fds[1];
 
-        setup_thread(&threads[i]);//设置线程的状态
+        setup_thread(&threads[i]);//初始化线程，包括监听notifiy_event，初始化连接队列等
         /* Reserve three fds for the libevent base, and two for the pipe */
         stats_state.reserved_fds += 5;//保留的文件描述符 3个留给base，2个留给匿名管道
     }
 
 	//在我们完成了libevent设置之后创建线程
     for (i = 0; i < nthreads; i++) {
-        create_worker(worker_libevent, &threads[i]);//创建线程，主循环在worker_libevent中
+        create_worker(worker_libevent, &threads[i]);//创建线程，把线程作为参数传递过去
     }
 
 	//在返回之前等待所有的线程启动
